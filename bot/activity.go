@@ -9,6 +9,10 @@ type IncomingActivity struct {
 	activity *skypeapi.Activity
 }
 
+func (message *IncomingActivity) Full() *skypeapi.Activity {
+	return message.activity
+}
+
 func (message *IncomingActivity) Text() string {
 	if message.IsGroup() {
 		return strings.Replace(message.activity.Text, message.activity.Recipient.Name, "", 1)
