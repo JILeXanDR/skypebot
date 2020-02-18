@@ -1,0 +1,32 @@
+{
+  "text": "test",
+  "type": "message",
+  "timestamp": "2020-02-18T07:09:34.826Z",
+  "id": "1582009774796",
+  "channelId": "skype",
+  "serviceUrl": "https://smba.trafficmanager.net/apis/",
+  "from": {
+    "id": "29:1Ste8djndDxbbZ4phA1TPNbeXscmB37-79S3sHSzR82s",
+    "name": "Alexandr Shtovba"
+  },
+  "conversation": {
+    "id": "29:1Ste8djndDxbbZ4phA1TPNbeXscmB37-79S3sHSzR82s"
+  },
+  "recipient": {
+    "id": "28:76579e23-9d24-4a8e-8530-04cd07a104f2",
+    "name": "Buffalo BOT"
+  },
+  "entities": [
+    {
+      "locale": "ru-RU",
+      "country": "UA",
+      "platform": "Linux",
+      "timezone": "Europe/Kiev",
+      "type": "clientInfo"
+    }
+  ],
+  "channelData": {
+    "text": "test"
+  },
+  "locale": "ru-RU"
+}

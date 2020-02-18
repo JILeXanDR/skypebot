@@ -1,10 +1,10 @@
 package bot
 
 import (
-	"errors"
+	"encoding/json"
+	"fmt"
 	"github.com/JILeXanDR/skypebot/skypeapi"
-	"github.com/labstack/echo"
-	"github.com/labstack/gommon/log"
+	"log"
 	"net/http"
 )
 
@@ -60,18 +60,24 @@ func (bot *Bot) Run() error {
 	return bot.api.Authenticate()
 }
 
-func (bot *Bot) WebHookHandler() echo.HandlerFunc {
-	return func(c echo.Context) error {
+func (bot *Bot) WebHookHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
 		var activity skypeapi.Activity
-		if err := c.Bind(&activity); err != nil {
-			return c.JSON(400, errors.New("bad activity"))
+
+		decoder := json.NewDecoder(r.Body)
+		if err := decoder.Decode(&activity); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprintf(w, "bad activity: %+v", err)
+			return
 		}
 
 		if err := bot.handleActivity(&activity); err != nil {
-			return c.JSON(500, err)
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintf(w, "can't handle inconing activity: %s", err.Error())
+			return
 		}
 
-		return c.NoContent(http.StatusNoContent)
+		w.WriteHeader(http.StatusNoContent)
 	}
 }
 

@@ -2,14 +2,13 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"net/http"
 	"os"
 	"testing"
 
 	"github.com/JILeXanDR/skypebot/bot"
 
-	"github.com/labstack/echo"
-	"github.com/labstack/echo/middleware"
-	"github.com/labstack/gommon/log"
 	"github.com/pkg/errors"
 )
 
@@ -37,11 +36,7 @@ func TestExample(t *testing.T) {
 		log.Fatal(err)
 	}
 
-	server := echo.New()
-	server.Use(middleware.Recover())
-	server.Use(middleware.Logger())
+	http.HandleFunc("/hook", b.WebHookHandler())
 
-	server.POST("/hook", b.WebHookHandler())
-
-	log.Fatal(server.Start(":" + os.Getenv("PORT")))
+	log.Fatal(http.ListenAndServe(":"+os.Getenv("PORT"), nil))
 }
