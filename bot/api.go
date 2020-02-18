@@ -26,9 +26,9 @@ func (api *API) Authenticate() error {
 }
 
 // Reply sends reply in incoming user's message
-func (api *API) Reply(activity *skypeapi.Activity, text string) error {
-	return skypeapi.SendReplyMessage(activity, text, api.token.AccessToken)
-}
+//func (api *API) Reply(activity *skypeapi.Activity, text string) error {
+//	return skypeapi.SendReplyMessage(activity, text, api.token.AccessToken)
+//}
 
 // SendToConversation sends message to a specific conversation
 func (api *API) SendToConversation(conversationID, text string) error {
@@ -52,14 +52,14 @@ func (api *API) SendToConversation(conversationID, text string) error {
 }
 
 // TODO: is not used
-func (api *API) ReplyToActivity(conversationID, activityID, text string) error {
-	activity := &skypeapi.Activity{
-		Type: "message",
-		Text: text,
-	}
-	url := fmt.Sprintf(serviceURL+"/v3/conversations/%v/activities/%v", conversationID, activity)
-	return skypeapi.SendActivityRequest(activity, url, api.token.AccessToken)
-}
+//func (api *API) ReplyToActivity(conversationID, activityID, text string) error {
+//	activity := &skypeapi.Activity{
+//		Type: "message",
+//		Text: text,
+//	}
+//	url := fmt.Sprintf(serviceURL+"/v3/conversations/%v/activities/%v", conversationID, activity)
+//	return skypeapi.SendActivityRequest(activity, url, api.token.AccessToken)
+//}
 
 // TODO: move to "api" package
 func newAPI(appID, appSecret string) *API {

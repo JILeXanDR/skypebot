@@ -2,9 +2,12 @@ package bot
 
 import (
 	"bytes"
+	"github.com/JILeXanDR/skypebot/bot/message"
+	"github.com/JILeXanDR/skypebot/skypeapi"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -71,10 +74,10 @@ func TestBot_WebHookHandler(t *testing.T) {
 	t.Run("valid activity with massage handler (private message)", func(t *testing.T) {
 		b := New(Config{})
 
-		b.On(EventMessage, func(activity *IncomingActivity) {
+		b.On(EventMessage, func(activity *Activity) {
 			assert.True(t, activity.SomeoneWroteToMe())
 			assert.False(t, activity.IsGroup())
-			assert.Equal(t, "Alexandr Shtovba", activity.FromUser().Name)
+			assert.Equal(t, "Alexandr Shtovba", activity.Sender().account.Name)
 			assert.Equal(t, "test", activity.Text())
 		})
 
@@ -85,10 +88,10 @@ func TestBot_WebHookHandler(t *testing.T) {
 
 	t.Run("valid activity with massage handler (group message)", func(t *testing.T) {
 		b := New(Config{})
-		b.On(EventMessage, func(activity *IncomingActivity) {
+		b.On(EventMessage, func(activity *Activity) {
 			assert.True(t, activity.SomeoneWroteToMe())
 			assert.True(t, activity.IsGroup())
-			assert.Equal(t, "Alexandr Shtovba", activity.FromUser().Name)
+			assert.Equal(t, "Alexandr Shtovba", activity.Sender().account.Name)
 			assert.Equal(t, "help", activity.Text())
 		})
 
@@ -102,9 +105,38 @@ func TestBot_Send(t *testing.T) {
 	b := New(Config{
 		AppID:     os.Getenv("SKYPE_APP_ID"),
 		AppSecret: os.Getenv("SKYPE_APP_SECRET"),
+		Logger:    log.New(os.Stdout, "", 0),
 	})
 
 	require.NoError(t, b.Run())
 
-	b.Send(ConversationID("8:jilexandr"), NewTextMessage("test"))
+	t.Run("to specific contact id", func(t *testing.T) {
+		err := b.Send(ConversationID("8:jilexandr"), message.TextMessage("test 1"))
+		require.NoError(t, err)
+	})
+
+	t.Run("to specific group id", func(t *testing.T) {
+		err := b.Send(ConversationID("19:58b03afc025e48d3a34e12d370412971@thread.skype"), message.TextMessage("test 2"))
+		require.NoError(t, err)
+	})
+
+	activity := &Activity{
+		&skypeapi.Activity{
+			From: skypeapi.ChannelAccount{
+				ID: "8:jilexandr",
+			},
+			Conversation: skypeapi.ConversationAccount{
+				ID: "19:58b03afc025e48d3a34e12d370412971@thread.skype",
+			},
+		},
+	}
+	t.Run("reply to activity (directly to group)", func(t *testing.T) {
+		err := b.Send(activity, message.TextMessage("test 3"))
+		require.NoError(t, err)
+	})
+
+	t.Run("reply to activity (personally to contact who sent message)", func(t *testing.T) {
+		err := b.Send(activity.Sender(), message.TextMessage("test 4"))
+		require.NoError(t, err)
+	})
 }
