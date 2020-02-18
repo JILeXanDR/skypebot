@@ -15,7 +15,7 @@ func (message *IncomingActivity) Full() *skypeapi.Activity {
 
 func (message *IncomingActivity) Text() string {
 	if message.IsGroup() {
-		return strings.Replace(message.activity.Text, message.activity.Recipient.Name, "", 1)
+		return strings.Replace(message.activity.Text, message.activity.Recipient.Name+" ", "", 1)
 	}
 	return message.activity.Text
 }

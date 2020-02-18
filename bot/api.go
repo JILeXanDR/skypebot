@@ -51,6 +51,7 @@ func (api *API) SendToConversation(conversationID, text string) error {
 	return nil
 }
 
+// TODO: is not used
 func (api *API) ReplyToActivity(conversationID, activityID, text string) error {
 	activity := &skypeapi.Activity{
 		Type: "message",
@@ -60,6 +61,7 @@ func (api *API) ReplyToActivity(conversationID, activityID, text string) error {
 	return skypeapi.SendActivityRequest(activity, url, api.token.AccessToken)
 }
 
+// TODO: move to "api" package
 func newAPI(appID, appSecret string) *API {
 	return &API{
 		appID:     appID,

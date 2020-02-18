@@ -41,6 +41,7 @@ func emulateHookRequest(t *testing.T, handler http.HandlerFunc, json []byte) *ht
 
 func TestBot_WebHookHandler(t *testing.T) {
 	privateMessageActivity := loadTestFile(t, "private_message_activity.json")
+	groupMessageActivity := loadTestFile(t, "group_message_activity.json")
 
 	t.Run("nil body", func(t *testing.T) {
 		b := New(Config{})
@@ -68,18 +69,42 @@ func TestBot_WebHookHandler(t *testing.T) {
 	})
 
 	t.Run("valid activity with massage handler (private message)", func(t *testing.T) {
-		b := New(Config{
-			OnMessage: func(message *IncomingActivity, reply MessageReply) error {
-				assert.True(t, message.SomeoneWroteToMe())
-				assert.False(t, message.IsGroup())
-				assert.Equal(t, "Alexandr Shtovba", message.FromUser().Name)
-				assert.Equal(t, "test", message.Text())
-				return nil
-			},
+		b := New(Config{})
+
+		b.On(EventMessage, func(activity *IncomingActivity) {
+			assert.True(t, activity.SomeoneWroteToMe())
+			assert.False(t, activity.IsGroup())
+			assert.Equal(t, "Alexandr Shtovba", activity.FromUser().Name)
+			assert.Equal(t, "test", activity.Text())
 		})
 
 		rr := emulateHookRequest(t, b.WebHookHandler(), privateMessageActivity)
 
 		require.EqualValues(t, http.StatusNoContent, rr.Code)
 	})
+
+	t.Run("valid activity with massage handler (group message)", func(t *testing.T) {
+		b := New(Config{})
+		b.On(EventMessage, func(activity *IncomingActivity) {
+			assert.True(t, activity.SomeoneWroteToMe())
+			assert.True(t, activity.IsGroup())
+			assert.Equal(t, "Alexandr Shtovba", activity.FromUser().Name)
+			assert.Equal(t, "help", activity.Text())
+		})
+
+		rr := emulateHookRequest(t, b.WebHookHandler(), groupMessageActivity)
+
+		require.EqualValues(t, http.StatusNoContent, rr.Code)
+	})
+}
+
+func TestBot_Send(t *testing.T) {
+	b := New(Config{
+		AppID:     os.Getenv("SKYPE_APP_ID"),
+		AppSecret: os.Getenv("SKYPE_APP_SECRET"),
+	})
+
+	require.NoError(t, b.Run())
+
+	b.Send(ConversationID("8:jilexandr"), NewTextMessage("test"))
 }

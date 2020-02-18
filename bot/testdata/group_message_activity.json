@@ -1,1 +1,40 @@
-{}
+{
+  "text": "Buffalo BOT help",
+  "type": "message",
+  "timestamp": "2020-02-18T15:15:35.915Z",
+  "id": "1582038935904",
+  "channelId": "skype",
+  "serviceUrl": "https://smba.trafficmanager.net/apis/",
+  "from": {
+    "id": "29:1Ste8djndDxbbZ4phA1TPNbeXscmB37-79S3sHSzR82s",
+    "name": "Alexandr Shtovba"
+  },
+  "conversation": {
+    "isGroup": true,
+    "id": "19:58b03afc025e48d3a34e12d370412971@thread.skype"
+  },
+  "recipient": {
+    "id": "28:76579e23-9d24-4a8e-8530-04cd07a104f2",
+    "name": "Buffalo BOT"
+  },
+  "entities": [
+    {
+      "mentioned": {
+        "id": "28:76579e23-9d24-4a8e-8530-04cd07a104f2"
+      },
+      "text": "<at id=\"28:76579e23-9d24-4a8e-8530-04cd07a104f2\">Buffalo BOT</at>",
+      "type": "mention"
+    },
+    {
+      "locale": "ru-RU",
+      "country": "UA",
+      "platform": "Linux",
+      "timezone": "Europe/Kiev",
+      "type": "clientInfo"
+    }
+  ],
+  "channelData": {
+    "text": "<at id=\"28:76579e23-9d24-4a8e-8530-04cd07a104f2\">Buffalo BOT</at> help"
+  },
+  "locale": "ru-RU"
+}
