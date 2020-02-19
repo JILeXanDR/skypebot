@@ -51,6 +51,11 @@ func (api *API) SendToConversation(conversationID, text string) error {
 	return nil
 }
 
+func (api *API) SendActivity(activity *skypeapi.Activity) error {
+	url := fmt.Sprintf("%s/v3/conversations/%v/activities", serviceURL, activity.Conversation.ID)
+	return skypeapi.SendActivityRequest(activity, url, api.token.AccessToken)
+}
+
 // TODO: is not used
 //func (api *API) ReplyToActivity(conversationID, activityID, text string) error {
 //	activity := &skypeapi.Activity{

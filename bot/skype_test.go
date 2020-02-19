@@ -15,6 +15,11 @@ import (
 	"testing"
 )
 
+const (
+	privateConversation = ConversationID("8:jilexandr")
+	groupConversation   = ConversationID("19:58b03afc025e48d3a34e12d370412971@thread.skype")
+)
+
 func loadTestFile(t *testing.T, name string) []byte {
 	f, err := os.Open(path.Join("./testdata", name))
 	if err != nil {
@@ -111,32 +116,65 @@ func TestBot_Send(t *testing.T) {
 	require.NoError(t, b.Run())
 
 	t.Run("to specific contact id", func(t *testing.T) {
-		err := b.Send(ConversationID("8:jilexandr"), message.TextMessage("test 1"))
+		err := b.Send(privateConversation, message.TextMessage("test 1"))
 		require.NoError(t, err)
 	})
 
 	t.Run("to specific group id", func(t *testing.T) {
-		err := b.Send(ConversationID("19:58b03afc025e48d3a34e12d370412971@thread.skype"), message.TextMessage("test 2"))
+		err := b.Send(groupConversation, message.TextMessage("test 2"))
 		require.NoError(t, err)
 	})
+
+	//t.Run("to specific group id and to user", func(t *testing.T) {
+	//	err := b.Send(groupConversation, message.TextMessage("hello!"))
+	//	require.NoError(t, err)
+	//})
 
 	activity := &Activity{
 		&skypeapi.Activity{
 			From: skypeapi.ChannelAccount{
-				ID: "8:jilexandr",
+				ID: privateConversation.RecipientID(),
 			},
 			Conversation: skypeapi.ConversationAccount{
-				ID: "19:58b03afc025e48d3a34e12d370412971@thread.skype",
+				ID: groupConversation.RecipientID(),
 			},
 		},
 	}
 	t.Run("reply to activity (directly to group)", func(t *testing.T) {
-		err := b.Send(activity, message.TextMessage("test 3"))
+		err := b.Send(activity, message.TextMessage("@Alexandr Shtovba test 3"))
+		require.NoError(t, err)
+	})
+}
+
+func TestBot_SendActions(t *testing.T) {
+	b := New(Config{
+		AppID:     os.Getenv("SKYPE_APP_ID"),
+		AppSecret: os.Getenv("SKYPE_APP_SECRET"),
+		Logger:    log.New(os.Stdout, "", 0),
+	})
+
+	require.NoError(t, b.Run())
+
+	actions := []skypeapi.CardAction{
+		{
+			Type:  "imBack",
+			Title: "title1",
+			Value: "value1",
+		},
+		{
+			Type:  "imBack",
+			Title: "title2",
+			Value: "value2",
+		},
+	}
+
+	t.Run("private message", func(t *testing.T) {
+		err := b.SendActions(privateConversation, "test1", actions)
 		require.NoError(t, err)
 	})
 
-	t.Run("reply to activity (personally to contact who sent message)", func(t *testing.T) {
-		err := b.Send(activity.Sender(), message.TextMessage("test 4"))
+	t.Run("group message", func(t *testing.T) {
+		err := b.SendActions(groupConversation, "test2", actions)
 		require.NoError(t, err)
 	})
 }

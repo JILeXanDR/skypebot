@@ -130,6 +130,25 @@ func (bot *Bot) Send(recipient Recipienter, msg message.Sendable) error {
 	return nil
 }
 
+func (bot *Bot) SendActivity(activity *skypeapi.Activity) error {
+	bot.log(fmt.Sprintf("sending activity: %+v", *activity))
+	return bot.api.SendActivity(activity)
+}
+
+func (bot *Bot) SendActions(recipient Recipienter, text string, actions []skypeapi.CardAction) error {
+	activity := skypeapi.Activity{
+		Type: "message",
+		Conversation: skypeapi.ConversationAccount{
+			ID: recipient.RecipientID(),
+		},
+		Text: text,
+		SuggestedActions: &skypeapi.SuggestedActions{
+			Actions: actions,
+		},
+	}
+	return bot.SendActivity(&activity)
+}
+
 func New(config Config) *Bot {
 	logger := log.New(ioutil.Discard, "", 0)
 
