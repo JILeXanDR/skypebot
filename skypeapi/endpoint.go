@@ -20,13 +20,13 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
- */
+*/
 package skypeapi
 
 import (
-	"net/http"
 	"crypto/tls"
 	"encoding/json"
+	"net/http"
 )
 
 const (
@@ -47,7 +47,7 @@ type Endpoint struct {
 }
 
 // Returns a new Endpoint struct object with the default request path "/".
-func NewEndpoint(address string) (*Endpoint) {
+func NewEndpoint(address string) *Endpoint {
 	// the default TLS config
 	cfg := &tls.Config{
 		MinVersion:               tls.VersionTLS12,
@@ -82,7 +82,7 @@ type EndpointHandler struct {
 // The authorization token which is used to authenticate incoming requests by the microsoft servers.
 // The microsoftAppId which is used to authorize incoming requests
 // Returns a new Endpoint struct object with the default Strict-Transport-Security Header "max-age=63072000; includeSubDomains".
-func NewEndpointHandler(activityReceivedHandleFunction func(activity *Activity), authorizationToken, microsoftAppId string) (*EndpointHandler) {
+func NewEndpointHandler(activityReceivedHandleFunction func(activity *Activity), authorizationToken, microsoftAppId string) *EndpointHandler {
 	endpointHandler := &EndpointHandler{
 		AuthorizationToken:             authorizationToken,
 		TlsHeaderValue:                 defaultTlsHeaderValue,
@@ -134,7 +134,7 @@ func (endpointHandler EndpointHandler) ServeHTTP(responseWriter http.ResponseWri
 
 // This method could be used on an Endpoint struct object to setup an own web server which
 // handles skype actions. The returned http.Server can still be edited to
-func (endpoint Endpoint) SetupServer(handler EndpointHandler) (*http.Server) {
+func (endpoint Endpoint) SetupServer(handler EndpointHandler) *http.Server {
 	mux := http.NewServeMux()
 	mux.Handle(endpoint.Path, handler)
 	srv := &http.Server{

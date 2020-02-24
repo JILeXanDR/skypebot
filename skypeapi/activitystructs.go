@@ -23,7 +23,10 @@ SOFTWARE.
 */
 package skypeapi
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 type Activity struct {
 	// Type of activity. One of these values: contactRelationUpdate, conversationUpdate, deleteUserData,
@@ -243,4 +246,33 @@ type ConversationAccount struct {
 	IsGroup bool `json:"isGroup,omitempty"`
 	// A display name that can be used to identify the conversation.
 	Name string `json:"name,omitempty"`
+}
+
+type ConversationsResult struct {
+	Conversations     []ConversationMembers `json:"conversations"`
+	ContinuationToken string                `json:"continuation_token"`
+}
+
+type ConversationMembers struct {
+	ID      string           `json:"id"`
+	Members []ChannelAccount `json:"members"`
+}
+
+type ErrorResponse struct {
+	Err Error `json:"error"`
+}
+
+func (e *ErrorResponse) Error() string {
+	return fmt.Sprintf("http code: %d, message=%s", e.Err.InnerHttpError.StatusCode, e.Err.Message)
+}
+
+type Error struct {
+	Code           string         `json:"code"`
+	InnerHttpError InnerHttpError `json:"innerHttpError"`
+	Message        string         `json:"message"`
+}
+
+type InnerHttpError struct {
+	StatusCode int         `json:"statusCode"`
+	Body       interface{} `json:"body"`
 }

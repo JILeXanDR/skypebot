@@ -149,6 +149,20 @@ func (bot *Bot) SendActions(recipient Recipienter, text string, actions []skypea
 	return bot.SendActivity(&activity)
 }
 
+func (bot *Bot) MyConversations() (*skypeapi.ConversationsResult, error) {
+	resp, err := bot.api.PlainRequest(http.MethodGet, "/v3/conversations?continuationToken=76579e23-9d24-4a8e-8530-04cd07a104f2", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var list skypeapi.ConversationsResult
+	if err := json.NewDecoder(resp.Body).Decode(&list); err != nil {
+		return nil, err
+	}
+
+	return &list, nil
+}
+
 func New(config Config) *Bot {
 	logger := log.New(ioutil.Discard, "", 0)
 

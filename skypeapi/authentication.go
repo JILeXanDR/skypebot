@@ -1,15 +1,15 @@
 package skypeapi
 
 import (
-	"strings"
-	"fmt"
+	"bytes"
+	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
-	"bytes"
-	"time"
-	"crypto/x509"
-	"net/http"
 	"encoding/pem"
+	"fmt"
+	"net/http"
+	"strings"
+	"time"
 )
 
 const (
@@ -22,21 +22,21 @@ const (
 )
 
 type OpenIdDocument struct {
-	Issuer                            string `json:"issuer"`
-	AuthorizationEndpoint             string `json:"authorization_endpoint"`
-	JwksURI                           string `json:"jwks_uri"`
+	Issuer                            string   `json:"issuer"`
+	AuthorizationEndpoint             string   `json:"authorization_endpoint"`
+	JwksURI                           string   `json:"jwks_uri"`
 	IDTokenSigningAlgValuesSupported  []string `json:"id_token_signing_alg_values_supported"`
 	TokenEndpointAuthMethodsSupported []string `json:"token_endpoint_auth_methods_supported"`
 }
 
 type SigningKeys struct {
 	Keys []struct {
-		Kty          string `json:"kty"`
-		Use          string `json:"use"`
-		KeyId        string `json:"kid"`
-		X5T          string `json:"x5t"`
-		N            string `json:"n"`
-		E            string `json:"e"`
+		Kty          string   `json:"kty"`
+		Use          string   `json:"use"`
+		KeyId        string   `json:"kid"`
+		X5T          string   `json:"x5t"`
+		N            string   `json:"n"`
+		E            string   `json:"e"`
 		X5C          []string `json:"x5c"`
 		Endorsements []string `json:"endorsements,omitempty"`
 	} `json:"keys"`
@@ -53,8 +53,8 @@ type JwtPayload struct {
 	ServiceUrl   string `json:"serviceurl"`
 	Issuer       string `json:"iss"`
 	Audience     string `json:"aud"`
-	Expires      int `json:"exp"`
-	CreatedOnNbf int `json:"nbf"`
+	Expires      int    `json:"exp"`
+	CreatedOnNbf int    `json:"nbf"`
 }
 
 type MicrosoftJsonWebToken struct {

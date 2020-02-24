@@ -177,4 +177,17 @@ func TestBot_SendActions(t *testing.T) {
 		err := b.SendActions(groupConversation, "test2", actions)
 		require.NoError(t, err)
 	})
+
+	t.Run("get all conversations", func(t *testing.T) {
+		list, err := b.MyConversations()
+		
+		require.NoError(t, err)
+		require.NotEmpty(t, list)
+
+		for _, conversation := range list.Conversations {
+			for _, member := range conversation.Members {
+				println(member.ID, member.Name)
+			}
+		}
+	})
 }

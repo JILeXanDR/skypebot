@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"github.com/JILeXanDR/skypebot/skypeapi"
 	"github.com/pkg/errors"
+	"io"
+	"net/http"
 	"strings"
 )
 
@@ -56,15 +58,10 @@ func (api *API) SendActivity(activity *skypeapi.Activity) error {
 	return skypeapi.SendActivityRequest(activity, url, api.token.AccessToken)
 }
 
-// TODO: is not used
-//func (api *API) ReplyToActivity(conversationID, activityID, text string) error {
-//	activity := &skypeapi.Activity{
-//		Type: "message",
-//		Text: text,
-//	}
-//	url := fmt.Sprintf(serviceURL+"/v3/conversations/%v/activities/%v", conversationID, activity)
-//	return skypeapi.SendActivityRequest(activity, url, api.token.AccessToken)
-//}
+func (api *API) PlainRequest(method string, path string, body io.Reader) (*http.Response, error) {
+	url := fmt.Sprintf("%s/%s", serviceURL, path)
+	return skypeapi.PlainRequest(method, url, body, api.token.AccessToken)
+}
 
 // TODO: move to "api" package
 func newAPI(appID, appSecret string) *API {

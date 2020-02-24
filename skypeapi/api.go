@@ -20,33 +20,29 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
- */
+*/
 package skypeapi
 
 import (
-	"net/http"
-	"net/url"
+	"bytes"
 	"encoding/json"
 	"fmt"
-	"bytes"
+	"io"
+	"net/http"
+	"net/url"
 )
-
-type MessageListener interface {
-	handle()
-}
 
 type TokenResponse struct {
 	TokenType    string `json:"token_type"`
-	ExpiresIn    int `json:"expires_in"`
-	ExtExpiresIn int `json:"ext_expires_in"`
+	ExpiresIn    int    `json:"expires_in"`
+	ExtExpiresIn int    `json:"ext_expires_in"`
 	AccessToken  string `json:"access_token"`
 }
 
 const (
 	unexpectedHttpStatusCodeTemplate = "The microsoft servers returned an unexpected http status code: %v"
-
-	requestTokenUrl      = "https://login.microsoftonline.com/botframework.com/oauth2/v2.0/token"
-	replyMessageTemplate = "%vv3/conversations/%v/activities/%v"
+	requestTokenUrl                  = "https://login.microsoftonline.com/botframework.com/oauth2/v2.0/token"
+	replyMessageTemplate             = "%vv3/conversations/%v/activities/%v"
 )
 
 func RequestAccessToken(microsoftAppId string, microsoftAppPassword string) (TokenResponse, error) {
@@ -81,33 +77,42 @@ func SendReplyMessage(activity *Activity, message, authorizationToken string) er
 }
 
 func SendActivityRequest(activity *Activity, replyUrl, authorizationToken string) error {
-	client := &http.Client{}
-	if jsonEncoded, err := json.Marshal(*activity); err != nil {
+	jsonEncoded, err := json.Marshal(*activity)
+	if err != nil {
 		return err
-	} else {
-		req, err := http.NewRequest(
-			http.MethodPost,
-			replyUrl,
-			bytes.NewBuffer(*&jsonEncoded),
-		)
-		if err == nil {
-			req.Header.Set(authorizationHeaderKey, authorizationHeaderValuePrefix+authorizationToken)
-			req.Header.Set("Content-Type", "application/json")
-			resp, err := client.Do(*&req)
-			if err == nil {
-				defer resp.Body.Close()
-				var statusCode int = resp.StatusCode
-				if statusCode == http.StatusOK || statusCode == http.StatusCreated ||
-					statusCode == http.StatusAccepted || statusCode == http.StatusNoContent {
-					return nil
-				} else {
-					return fmt.Errorf(unexpectedHttpStatusCodeTemplate, statusCode)
-				}
-			} else {
-				return err
-			}
-		} else {
-			return err
-		}
 	}
+	_, err = PlainRequest(http.MethodPost, replyUrl, bytes.NewBuffer(*&jsonEncoded), authorizationToken)
+	return err
+}
+
+func PlainRequest(method string, path string, body io.Reader, authorizationToken string) (*http.Response, error) {
+	client := &http.Client{}
+
+	req, err := http.NewRequest(method, path, body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set(authorizationHeaderKey, authorizationHeaderValuePrefix+authorizationToken)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := client.Do(*&req)
+	if err != nil {
+		return nil, err
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= http.StatusOK && resp.StatusCode <= http.StatusNoContent {
+		return resp, nil
+	}
+
+	var errResp ErrorResponse
+	if err := json.NewDecoder(resp.Body).Decode(&errResp); err != nil {
+		return nil, err
+	}
+
+	errResp.Err.InnerHttpError.StatusCode = resp.StatusCode
+
+	return resp, &errResp
 }
