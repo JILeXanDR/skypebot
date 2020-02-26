@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -117,22 +118,44 @@ func (bot *Bot) Send(recipient Recipienter, msg message.Sendable) error {
 			bot.log(fmt.Sprintf("can't sent message: %+v", err))
 		}
 		return nil
+	case *message.ImageMessage:
+		// https://docs.microsoft.com/en-us/azure/bot-service/rest-api/bot-framework-rest-connector-add-media-attachments?view=azure-bot-service-4.0#add-a-media-attachment
+
+		buf, err := ioutil.ReadAll(m.Reader)
+		if err != nil {
+			return err
+		}
+
+		base64Image := `data:image/png;base64,` + base64.StdEncoding.EncodeToString(buf)
+
+		activity := skypeapi.Activity{
+			Type: "message",
+			Recipient: skypeapi.ChannelAccount{
+				ID: recipient.RecipientID(),
+			},
+			Conversation: skypeapi.ConversationAccount{
+				ID: recipient.RecipientID(),
+			},
+			Text: "image...",
+			Attachments: []skypeapi.Attachment{
+				{
+					ContentType: "image/png",
+					ContentUrl:  base64Image,
+					Name:        "image.png",
+				},
+			},
+		}
+
+		if err := bot.api.SendActivity(&activity); err != nil {
+			bot.log(fmt.Sprintf("can't sent message with image: %+v", err))
+		}
 	default:
 		return errors.New(fmt.Sprintf("message of type <%s> is not supported", m))
-		//case *ImageMessage:
-		//	// TODO
-		//	original.Attachments = []skypeapi.Attachment{
-		//		{
-		//			Content: skypeapi.AttachmentContent{
-		//				Type: "xxx",
-		//			},
-		//		},
-		//	}
 	}
 	return nil
 }
 
-func (bot *Bot) SendActivity(activity *skypeapi.Activity) error {
+func (bot *Bot) sendActivity(activity *skypeapi.Activity) error {
 	bot.log(fmt.Sprintf("sending activity: %+v", *activity))
 	return bot.api.SendActivity(activity)
 }
@@ -148,7 +171,7 @@ func (bot *Bot) SendActions(recipient Recipienter, text string, actions []skypea
 			Actions: actions,
 		},
 	}
-	return bot.SendActivity(&activity)
+	return bot.sendActivity(&activity)
 }
 
 func (bot *Bot) MyConversations() (*skypeapi.ConversationsResult, error) {

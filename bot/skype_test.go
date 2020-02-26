@@ -125,10 +125,18 @@ func TestBot_Send(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	//t.Run("to specific group id and to user", func(t *testing.T) {
-	//	err := b.Send(groupConversation, message.TextMessage("hello!"))
-	//	require.NoError(t, err)
-	//})
+	t.Run("send bad image", func(t *testing.T) {
+		_, err := message.NewBuilder().WithAttachmentFromURL("not url").Build()
+		require.EqualError(t, err, `can't download image via URL not url: Get not%20url: unsupported protocol scheme ""`)
+	})
+
+	t.Run("send image", func(t *testing.T) {
+		msg, err := message.NewBuilder().WithAttachmentFromURL("https://hackernoon.com/hn-images/0*xMaFF2hSXpf_kIfG.jpg").Build()
+		require.NoError(t, err)
+
+		err = b.Send(privateConversation, msg)
+		require.NoError(t, err)
+	})
 
 	activity := &Activity{
 		&skypeapi.Activity{
@@ -180,7 +188,7 @@ func TestBot_SendActions(t *testing.T) {
 
 	t.Run("get all conversations", func(t *testing.T) {
 		list, err := b.MyConversations()
-		
+
 		require.NoError(t, err)
 		require.NotEmpty(t, list)
 

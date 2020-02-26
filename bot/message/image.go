@@ -3,7 +3,7 @@ package message
 import "io"
 
 type ImageMessage struct {
-	image io.Reader
+	Reader io.Reader
 }
 
 func (m *ImageMessage) Send() error {
@@ -12,7 +12,6 @@ func (m *ImageMessage) Send() error {
 
 func NewImageMessage(image io.Reader) Sendable {
 	return &ImageMessage{
-		image: image,
+		Reader: image,
 	}
 }
-
