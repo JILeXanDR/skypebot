@@ -67,7 +67,3 @@ func (message *Activity) Sender() *Sender {
 		account: message.activity.From,
 	}
 }
-
-func (message *Activity) Command() Command {
-	return ""
-}

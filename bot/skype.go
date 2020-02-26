@@ -19,7 +19,7 @@ type Config struct {
 
 type Bot struct {
 	api           *API
-	eventHandlers map[string]func(*Activity)
+	eventHandlers map[Event]func(*Activity)
 	logger        *log.Logger
 }
 
@@ -41,6 +41,9 @@ func (bot *Bot) handleActivity(activity *skypeapi.Activity) error {
 	} else if msg.RemovedFromConversation() {
 		bot.callEventHandlerIfExists(EventRemovedFromConversation, msg)
 	} else {
+		if bot.lookupCommand(msg) {
+			return nil
+		}
 		bot.log("activity has unknown type and we can't find supported event for it")
 	}
 
@@ -50,7 +53,7 @@ func (bot *Bot) handleActivity(activity *skypeapi.Activity) error {
 }
 
 func (bot *Bot) callEventHandlerIfExists(event Event, activity *Activity) {
-	handler, ok := bot.eventHandlers[event.EventID()]
+	handler, ok := bot.eventHandlers[event]
 	if ok {
 		bot.log(fmt.Sprintf(`calling handler for event "%s"`, event))
 		handler(activity)
@@ -104,7 +107,7 @@ func (bot *Bot) log(text string) {
 
 func (bot *Bot) On(event Event, handler func(*Activity)) {
 	bot.log(fmt.Sprintf("setting an event handler for '%s'", event.EventID()))
-	bot.eventHandlers[event.EventID()] = handler
+	bot.eventHandlers[event] = handler
 }
 
 func (bot *Bot) Send(recipient Recipienter, msg message.Sendable) error {
@@ -163,6 +166,19 @@ func (bot *Bot) MyConversations() (*skypeapi.ConversationsResult, error) {
 	return &list, nil
 }
 
+func (bot *Bot) lookupCommand(msg *Activity) bool {
+	for event, handler := range bot.eventHandlers {
+		switch cmd := event.(type) {
+		case Command:
+			if cmd.Match(msg.Text()) {
+				handler(msg)
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func New(config Config) *Bot {
 	logger := log.New(ioutil.Discard, "", 0)
 
@@ -172,7 +188,7 @@ func New(config Config) *Bot {
 
 	return &Bot{
 		api:           newAPI(config.AppID, config.AppSecret),
-		eventHandlers: make(map[string]func(*Activity), 0),
+		eventHandlers: make(map[Event]func(*Activity), 0),
 		logger:        logger,
 	}
 }

@@ -22,15 +22,15 @@ func TestExample(t *testing.T) {
 		b.Send(activity, message.TextMessage(fmt.Sprintf(`Ваше сообщение "%s."`, activity.Text())))
 	})
 
-	b.On(bot.Command("ping"), func(activity *bot.Activity) {
+	var cdmPing bot.Command = "ping"
+	b.On(cdmPing, func(activity *bot.Activity) {
 		b.Send(activity, message.TextMessage("pong"))
 	})
 
-	b.On(bot.Command("cmd :id"), func(activity *bot.Activity) {
-		cmd := activity.Command()
-		name := cmd.Name()
-		args := cmd.Args()
-		b.Send(activity, message.TextMessage(fmt.Sprintf("Получена команда <%s> с параметрами <%v>", name, args)))
+	var cdmTestArgs bot.Command = "test :name"
+	b.On(cdmTestArgs, func(activity *bot.Activity) {
+		cmd := cdmTestArgs.Parse(activity)
+		b.Send(activity, message.TextMessage(fmt.Sprintf("Получена команда <%s> с параметрами <%v>", cmd.Name, cmd.Args)))
 	})
 
 	b.On(bot.EventAddedToContacts, func(activity *bot.Activity) {
