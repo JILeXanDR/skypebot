@@ -29,22 +29,27 @@ func (message *Activity) IsGroup() bool {
 	return message.activity.Conversation.IsGroup
 }
 
+// any person writes message to bot (private chat or in group chat)
 func (message *Activity) SomeoneWroteToMe() bool {
 	return message.activity.Type == "message"
 }
 
+// bot added to contacts
 func (message *Activity) AddedToContacts() bool {
 	return message.activity.Type == "contactRelationUpdate" && message.activity.Action == "add"
 }
 
+// bot removed from contacts
 func (message *Activity) RemovedFromContacts() bool {
 	return message.activity.Type == "contactRelationUpdate" && message.activity.Action == "remove"
 }
 
+// any person added to the conversation (NOT A BOT)
 func (message *Activity) AddedToConversation() bool {
 	return message.activity.Type == "conversationUpdate" && len(message.activity.MembersAdded) > 0
 }
 
+// any person removed from the conversation (NOT A BOT)
 func (message *Activity) RemovedFromConversation() bool {
 	return message.activity.Type == "conversationUpdate" && len(message.activity.MembersRemoved) > 0
 }
