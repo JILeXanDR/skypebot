@@ -30,7 +30,9 @@ func (bot *Bot) handleActivity(activity *skypeapi.Activity) error {
 	sender := msg.Sender()
 	bot.log(fmt.Sprintf("handling message, details: from=%s (%s), text=%s, group chat=%v", sender.account.Name, sender.account.ID, msg.Text(), msg.IsGroup()))
 
-	if msg.SomeoneWroteToMe() {
+	if bot.lookupCommand(msg) {
+		return nil
+	} else if msg.SomeoneWroteToMe() {
 		bot.callEventHandlerIfExists(EventMessage, msg)
 	} else if msg.AddedToContacts() {
 		bot.callEventHandlerIfExists(EventAddedToContacts, msg)
@@ -41,9 +43,6 @@ func (bot *Bot) handleActivity(activity *skypeapi.Activity) error {
 	} else if msg.RemovedFromConversation() {
 		bot.callEventHandlerIfExists(EventRemovedFromConversation, msg)
 	} else {
-		if bot.lookupCommand(msg) {
-			return nil
-		}
 		bot.log("activity has unknown type and we can't find supported event for it")
 	}
 
