@@ -1,0 +1,36 @@
+{
+  "attachments": [
+    {
+      "contentType": "application/octet-stream",
+      "contentUrl": "https://smba.trafficmanager.net/apis/v3/attachments/0-weu-d13-cdd66793548aaf053acfd720bfb6482f/views/original",
+      "thumbnailUrl": "https://smba.trafficmanager.net/apis/v3/attachments/0-weu-d13-cdd66793548aaf053acfd720bfb6482f/views/thumbnail",
+      "name": "stats3.json"
+    }
+  ],
+  "type": "message",
+  "timestamp": "2020-03-11T15:19:36.448Z",
+  "id": "1583939976000",
+  "channelId": "skype",
+  "serviceUrl": "https://smba.trafficmanager.net/apis/",
+  "from": {
+    "id": "29:1Ste8djndDxbbZ4phA1TPNbeXscmB37-79S3sHSzR82s",
+    "name": "Alexandr Shtovba"
+  },
+  "conversation": {
+    "id": "29:1Ste8djndDxbbZ4phA1TPNbeXscmB37-79S3sHSzR82s"
+  },
+  "recipient": {
+    "id": "28:76579e23-9d24-4a8e-8530-04cd07a104f2",
+    "name": "Buffalo BOT"
+  },
+  "entities": [
+    {
+      "locale": "ru-RU",
+      "country": "UA",
+      "platform": "Linux",
+      "timezone": "Europe/Kiev",
+      "type": "clientInfo"
+    }
+  ],
+  "locale": "ru-RU"
+}

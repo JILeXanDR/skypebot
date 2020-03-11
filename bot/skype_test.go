@@ -50,6 +50,7 @@ func emulateHookRequest(t *testing.T, handler http.HandlerFunc, json []byte) *ht
 func TestBot_WebHookHandler(t *testing.T) {
 	privateMessageActivity := loadTestFile(t, "private_message_activity.json")
 	groupMessageActivity := loadTestFile(t, "group_message_activity.json")
+	attachmentActivity := loadTestFile(t, "attachment_message_activity.json")
 
 	t.Run("nil body", func(t *testing.T) {
 		b := New(Config{})
@@ -79,7 +80,7 @@ func TestBot_WebHookHandler(t *testing.T) {
 	t.Run("valid activity with massage handler (private message)", func(t *testing.T) {
 		b := New(Config{})
 
-		b.On(EventMessage, func(activity *Activity) {
+		b.Handle(OnTextMessage, func(activity *Activity) {
 			assert.True(t, activity.SomeoneWroteToMe())
 			assert.False(t, activity.IsGroup())
 			assert.Equal(t, "Alexandr Shtovba", activity.Sender().account.Name)
@@ -93,7 +94,7 @@ func TestBot_WebHookHandler(t *testing.T) {
 
 	t.Run("valid activity with massage handler (group message)", func(t *testing.T) {
 		b := New(Config{})
-		b.On(EventMessage, func(activity *Activity) {
+		b.Handle(OnTextMessage, func(activity *Activity) {
 			assert.True(t, activity.SomeoneWroteToMe())
 			assert.True(t, activity.IsGroup())
 			assert.Equal(t, "Alexandr Shtovba", activity.Sender().account.Name)
@@ -104,6 +105,21 @@ func TestBot_WebHookHandler(t *testing.T) {
 
 		require.EqualValues(t, http.StatusNoContent, rr.Code)
 	})
+
+	t.Run("attachment activity", func(t *testing.T) {
+		emulateWebHook(t, attachmentActivity, func(b *Bot) {
+			b.Handle(OnAttachment, func(activity *Activity) {
+				assert.True(t, false)
+			})
+		})
+	})
+}
+
+func emulateWebHook(t *testing.T, data []byte, f func(b *Bot)) {
+	b := New(Config{})
+	f(b)
+	rr := emulateHookRequest(t, b.WebHookHandler(), data)
+	require.EqualValues(t, http.StatusNoContent, rr.Code)
 }
 
 func TestBot_Send(t *testing.T) {
@@ -186,16 +202,16 @@ func TestBot_SendActions(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	t.Run("get all conversations", func(t *testing.T) {
-		list, err := b.MyConversations()
-
-		require.NoError(t, err)
-		require.NotEmpty(t, list)
-
-		for _, conversation := range list.Conversations {
-			for _, member := range conversation.Members {
-				println(member.ID, member.Name)
-			}
-		}
-	})
+	//t.Run("get all conversations", func(t *testing.T) {
+	//	list, err := b.MyConversations()
+	//
+	//	require.NoError(t, err)
+	//	require.NotEmpty(t, list)
+	//
+	//	for _, conversation := range list.Conversations {
+	//		for _, member := range conversation.Members {
+	//			println(member.ID, member.Name)
+	//		}
+	//	}
+	//})
 }

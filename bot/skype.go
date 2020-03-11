@@ -20,7 +20,7 @@ type Config struct {
 
 type Bot struct {
 	api           *API
-	eventHandlers map[Event]func(*Activity)
+	eventHandlers map[Action]func(*Activity)
 	logger        *log.Logger
 }
 
@@ -31,28 +31,39 @@ func (bot *Bot) handleActivity(activity *skypeapi.Activity) error {
 	sender := msg.Sender()
 	bot.log(fmt.Sprintf("handling message, details: from=%s (%s), text=%s, group chat=%v", sender.account.Name, sender.account.ID, msg.Text(), msg.IsGroup()))
 
-	if bot.lookupCommand(msg) {
-		return nil
-	} else if msg.SomeoneWroteToMe() {
-		bot.callEventHandlerIfExists(EventMessage, msg)
-	} else if msg.AddedToContacts() {
-		bot.callEventHandlerIfExists(EventAddedToContacts, msg)
-	} else if msg.RemovedFromContacts() {
-		bot.callEventHandlerIfExists(EventRemovedFromContacts, msg)
-	} else if msg.AddedToConversation() {
-		bot.callEventHandlerIfExists(EventAddedToConversation, msg)
-	} else if msg.RemovedFromConversation() {
-		bot.callEventHandlerIfExists(EventRemovedFromConversation, msg)
-	} else {
+	switch true {
+	case msg.activity.Type == "message" && len(msg.activity.Attachments) > 0:
+		bot.callEventHandlerIfExists(OnAttachment, msg)
+		break
+	case msg.activity.Type == "message":
+		// it can be text message, attachment or command
+		if !bot.lookupCommand(msg) {
+			// it case when handler for command not found call handler for text message
+			bot.callEventHandlerIfExists(OnTextMessage, msg)
+		}
+		break
+	case msg.activity.Type == "contactRelationUpdate" && msg.activity.Action == "add":
+		bot.callEventHandlerIfExists(OnAddedToContacts, msg)
+		break
+	case msg.activity.Type == "contactRelationUpdate" && msg.activity.Action == "remove":
+		bot.callEventHandlerIfExists(OnRemovedFromContacts, msg)
+		break
+	case msg.activity.Type == "conversationUpdate" && len(msg.activity.MembersAdded) > 0:
+		// any person added to the conversation (NOT A BOT)
+		bot.callEventHandlerIfExists(OnAddedToConversation, msg)
+		break
+	case msg.activity.Type == "conversationUpdate" && len(msg.activity.MembersRemoved) > 0:
+		// any person removed from the conversation (NOT A BOT)
+		bot.callEventHandlerIfExists(OnRemovedFromConversation, msg)
+		break
+	default:
 		bot.log("activity has unknown type and we can't find supported event for it")
 	}
-
-	bot.callEventHandlerIfExists(EventAll, msg)
 
 	return nil
 }
 
-func (bot *Bot) callEventHandlerIfExists(event Event, activity *Activity) {
+func (bot *Bot) callEventHandlerIfExists(event Action, activity *Activity) {
 	handler, ok := bot.eventHandlers[event]
 	if ok {
 		bot.log(fmt.Sprintf(`calling handler for event "%s"`, event))
@@ -105,8 +116,8 @@ func (bot *Bot) log(text string) {
 	bot.logger.Printf("[SKYPE_BOT] %s", text)
 }
 
-func (bot *Bot) On(event Event, handler func(*Activity)) {
-	bot.log(fmt.Sprintf("setting an event handler for '%s'", event.EventID()))
+func (bot *Bot) Handle(event Action, handler func(*Activity)) {
+	bot.log(fmt.Sprintf("setting an event handler for '%s'", event.ID()))
 	bot.eventHandlers[event] = handler
 }
 
@@ -174,20 +185,21 @@ func (bot *Bot) SendActions(recipient Recipienter, text string, actions []skypea
 	return bot.sendActivity(&activity)
 }
 
-func (bot *Bot) MyConversations() (*skypeapi.ConversationsResult, error) {
-	resp, err := bot.api.PlainRequest(http.MethodGet, "/v3/conversations?continuationToken=76579e23-9d24-4a8e-8530-04cd07a104f2", nil)
-	if err != nil {
-		return nil, err
-	}
+//func (bot *Bot) MyConversations() (*skypeapi.ConversationsResult, error) {
+//	resp, err := bot.api.PlainRequest(http.MethodGet, "/v3/conversations?continuationToken=76579e23-9d24-4a8e-8530-04cd07a104f2", nil)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	var list skypeapi.ConversationsResult
+//	if err := json.NewDecoder(resp.Body).Decode(&list); err != nil {
+//		return nil, err
+//	}
+//
+//	return &list, nil
+//}
 
-	var list skypeapi.ConversationsResult
-	if err := json.NewDecoder(resp.Body).Decode(&list); err != nil {
-		return nil, err
-	}
-
-	return &list, nil
-}
-
+// lookupCommand finds and calls command. It returns true when executed something.
 func (bot *Bot) lookupCommand(msg *Activity) bool {
 	for event, handler := range bot.eventHandlers {
 		switch cmd := event.(type) {
@@ -210,7 +222,7 @@ func New(config Config) *Bot {
 
 	return &Bot{
 		api:           newAPI(config.AppID, config.AppSecret),
-		eventHandlers: make(map[Event]func(*Activity), 0),
+		eventHandlers: make(map[Action]func(*Activity), 0),
 		logger:        logger,
 	}
 }

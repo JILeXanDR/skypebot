@@ -7,21 +7,22 @@ import (
 
 type event string
 
-type Event interface {
-	EventID() string
+type Action interface {
+	ID() string
 }
 
 const (
-	EventMessage                 event = "event:message"
-	EventAddedToContacts         event = "event:added_to_contacts"
-	EventRemovedFromContacts     event = "event:removed_from_contacts"
-	EventAddedToConversation     event = "event:added_to_conversation"
-	EventRemovedFromConversation event = "event:removed_from_conversation"
-	EventAll                     event = "event:all"
+	OnTextMessage             event = "text_message"
+	OnAttachment              event = "attachment"
+	OnAddedToContacts         event = "added_to_contacts"
+	OnRemovedFromContacts     event = "removed_from_contacts"
+	OnAddedToConversation     event = "added_to_conversation"
+	OnRemovedFromConversation event = "removed_from_conversation"
+	OnAll                     event = "all"
 )
 
-func (e event) EventID() string {
-	return string(e)
+func (e event) ID() string {
+	return fmt.Sprintf("event:%s", e)
 }
 
 type Recipienter interface {
@@ -34,7 +35,6 @@ func (id ConversationID) RecipientID() string {
 	return string(id)
 }
 
-// get_updates :klan
 type Command string
 
 func (c Command) Name() string {
@@ -46,7 +46,7 @@ func (c Command) Args(activity *Activity) map[string]interface{} {
 	return map[string]interface{}{}
 }
 
-func (c Command) EventID() string {
+func (c Command) ID() string {
 	return fmt.Sprintf("command:%s", c.Name())
 }
 

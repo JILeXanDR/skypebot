@@ -18,36 +18,39 @@ func TestExample(t *testing.T) {
 		Logger:    log.New(os.Stdout, "", 0),
 	})
 
-	b.On(bot.EventMessage, func(activity *bot.Activity) {
+	b.Handle(bot.OnTextMessage, func(activity *bot.Activity) {
 		b.Send(activity, message.TextMessage(fmt.Sprintf(`Ваше сообщение "%s."`, activity.Text())))
 	})
 
-	var cdmPing bot.Command = "ping"
-	b.On(cdmPing, func(activity *bot.Activity) {
+	b.Handle(bot.OnAttachment, func(activity *bot.Activity) {
+		b.Send(activity, message.TextMessage(fmt.Sprintf(`Ваше сообщение "%s."`, activity.Text())))
+	})
+
+	b.Handle(bot.Command("ping"), func(activity *bot.Activity) {
 		b.Send(activity, message.TextMessage("pong"))
 	})
 
 	var cdmTestArgs bot.Command = "test :name"
-	b.On(cdmTestArgs, func(activity *bot.Activity) {
+	b.Handle(cdmTestArgs, func(activity *bot.Activity) {
 		cmd := cdmTestArgs.Parse(activity)
 		b.Send(activity, message.TextMessage(fmt.Sprintf("Получена команда <%s> с параметрами <%v>", cmd.Name, cmd.Args)))
 	})
 
-	b.On(bot.EventAddedToContacts, func(activity *bot.Activity) {
+	b.Handle(bot.OnAddedToContacts, func(activity *bot.Activity) {
 		b.Send(activity, message.TextMessage("привет! спасибо что добавил!"))
 	})
 
 	// TODO: it should not send message because bot was removed from contacts?
-	b.On(bot.EventRemovedFromContacts, func(activity *bot.Activity) {
+	b.Handle(bot.OnRemovedFromContacts, func(activity *bot.Activity) {
 		b.Send(activity, message.TextMessage("как жаль..."))
 	})
 
-	b.On(bot.EventAddedToConversation, func(activity *bot.Activity) {
+	b.Handle(bot.OnAddedToConversation, func(activity *bot.Activity) {
 		b.Send(activity, message.TextMessage("привет! спасибо что добавили в диалог!"))
 	})
 
 	// TODO: it should not send message because bot was removed from conversation?
-	b.On(bot.EventRemovedFromConversation, func(activity *bot.Activity) {
+	b.Handle(bot.OnRemovedFromConversation, func(activity *bot.Activity) {
 		b.Send(activity, message.TextMessage("жаль что удалили..."))
 	})
 
