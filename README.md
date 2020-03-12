@@ -17,11 +17,11 @@ Just set before the following env variables:
 ## Features
 - send text messages
 - receive text messages (setting of webhook is required)
-- receive events conversation (setting of webhook is required)
+- receive conversation events (setting of webhook is required)
 
 ## TODO
 - tests
-- add command
+- add command handler
 - send/receive attachments
 
 ## Example
