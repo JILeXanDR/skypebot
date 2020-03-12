@@ -21,6 +21,7 @@ Just set before the following env variables:
 
 ## TODO
 - tests
+- refactoring
 - add command handler
 - send/receive attachments
 
