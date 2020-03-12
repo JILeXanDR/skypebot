@@ -14,6 +14,16 @@ Just set before the following env variables:
 - see your SKYPE_APP_ID in "Application (client) ID"
 - see your SKYPE_APP_SECRET in the section "Client secrets" of "Manage -> Certificates & secrets"
 
+## Features
+- send text messages
+- receive text messages (setting of webhook is required)
+- receive events conversation (setting of webhook is required)
+
+## TODO
+- tests
+- add command
+- send/receive attachments
+
 ## Example
 ```go
 package main
