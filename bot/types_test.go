@@ -1,32 +1,34 @@
 package bot
 
 import (
-	"github.com/JILeXanDR/skypebot/skypeapi"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestCommand_Name(t *testing.T) {
-	tt := []struct {
-		cmd          Command
-		expectedName string
-		expectedArgs map[string]interface{}
-	}{
-		{Command("test"), "test", map[string]interface{}{}},
-		{Command("test data"), "test", map[string]interface{}{}},
-		{Command(""), "", map[string]interface{}{}},
-		{Command("   "), "", map[string]interface{}{}},
-	}
+	t.Run("", func(t *testing.T) {
+		cmd := NewCommand("test", nil)
 
-	for _, tc := range tt {
-		tc := tc
-		assert.Equal(t, tc.expectedName, tc.cmd.Name(), "name")
-		assert.Equal(t, tc.expectedArgs, tc.cmd.Args(&Activity{activity: &skypeapi.Activity{Text: "test"}}), "name")
-	}
+		assert.Equal(t, "test", cmd.Name())
+		assert.Equal(t, map[string]interface{}{}, cmd.Args())
+	})
+
+	assert.PanicsWithValue(t, `command name "test data" is wrong, can't contain spaces or be an empty string`, func() {
+		NewCommand("test data", nil)
+	})
+
+	assert.PanicsWithValue(t, `command name "" is wrong, can't contain spaces or be an empty string`, func() {
+		NewCommand("", nil)
+	})
+
+	assert.PanicsWithValue(t, `command name "   " is wrong, can't contain spaces or be an empty string`, func() {
+		NewCommand("   ", nil)
+	})
 }
 
 func TestCommand_Match(t *testing.T) {
-	assert.True(t, Command("test").Match("test"))
-	assert.True(t, Command("test").Match("test val1 val2"))
-	assert.False(t, Command("test").Match("test1"))
+	assert.True(t, NewCommand("test", nil).Match("test"))
+	assert.True(t, NewCommand("test", nil).Match("test val1 val2"))
+	assert.False(t, NewCommand("test", nil).Match("test1"))
+	assert.False(t, NewCommand("test", nil).Match(" test"))
 }

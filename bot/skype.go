@@ -147,7 +147,7 @@ func (bot *Bot) Send(recipient Recipienter, msg message.Sendable) error {
 			Conversation: skypeapi.ConversationAccount{
 				ID: recipient.RecipientID(),
 			},
-			Text: "image...",
+			Text: "",
 			Attachments: []skypeapi.Attachment{
 				{
 					ContentType: "image/png",
@@ -203,7 +203,7 @@ func (bot *Bot) SendActions(recipient Recipienter, text string, actions []skypea
 func (bot *Bot) lookupCommand(msg *Activity) bool {
 	for event, handler := range bot.eventHandlers {
 		switch cmd := event.(type) {
-		case Command:
+		case *Command:
 			if cmd.Match(msg.Text()) {
 				handler(msg)
 				return true

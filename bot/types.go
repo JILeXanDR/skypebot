@@ -2,6 +2,7 @@ package bot
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -35,32 +36,55 @@ func (id ConversationID) RecipientID() string {
 	return string(id)
 }
 
-type Command string
-
-func (c Command) Name() string {
-	values := strings.Split(string(c), " ")
-	return values[0]
+func NewCommand(name string, args []string) *Command {
+	trimmed := strings.ReplaceAll(name, " ", "")
+	if len(trimmed) != len(name) || trimmed == "" {
+		panic(fmt.Sprintf(`command name "%s" is wrong, can't contain spaces or be an empty string`, name))
+	}
+	return &Command{
+		name:       name,
+		args:       args,
+		parsedArgs: make(map[string]interface{}, 0),
+	}
 }
 
-func (c Command) Args(activity *Activity) map[string]interface{} {
-	return map[string]interface{}{}
+type Command struct {
+	name       string
+	args       []string
+	parsedArgs map[string]interface{}
 }
 
-func (c Command) ID() string {
+func (c *Command) ID() string {
 	return fmt.Sprintf("command:%s", c.Name())
 }
 
-func (c Command) Match(message string) bool {
+func (c *Command) Name() string {
+	return c.name
+}
+
+func (c *Command) Args() map[string]interface{} {
+	return c.parsedArgs
+}
+
+// Match checks does "message" is command.
+func (c *Command) Match(message string) bool {
 	values := strings.Split(message, " ")
 	return values[0] == c.Name()
 }
 
-func (c Command) Parse(activity *Activity) Cmd {
-	return Cmd{}
-}
-
-type Cmd struct {
-	Text string
-	Name string
-	Args map[string]interface{}
+func (c *Command) Parse(text string) {
+	values := strings.Split(text, " ")
+	args := make(map[string]interface{}, 0)
+	if len(values) > 1 {
+		messageValues := values[1:]
+		for i, arg := range c.args {
+			val := messageValues[i]
+			if int, err := strconv.Atoi(val); err == nil {
+				args[arg] = int
+			} else {
+				args[arg] = val
+			}
+		}
+	}
+	c.parsedArgs = args
 }

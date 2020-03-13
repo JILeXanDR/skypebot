@@ -158,7 +158,7 @@ func ParseMicrosoftJsonWebToken(headerValue string) (MicrosoftJsonWebToken, erro
 	if len(parsedHeaderValue) == 0 {
 		return *microsoftJsonWebToken, fmt.Errorf(wrongAuthorizationHeaderFormatError, parsedHeaderValue)
 	} else {
-		var split []string = strings.Split(parsedHeaderValue, splitCharacter)
+		var split = strings.Split(parsedHeaderValue, splitCharacter)
 		if len(split) == 3 {
 			jwtHeader := &JwtHeader{}
 			jwtPayload := &JwtPayload{}

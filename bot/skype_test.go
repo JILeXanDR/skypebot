@@ -20,6 +20,33 @@ const (
 	groupConversation   = ConversationID("19:58b03afc025e48d3a34e12d370412971@thread.skype")
 )
 
+type skypeFakeServer struct {
+	*Bot
+	handler http.HandlerFunc
+}
+
+func newBotWrapper() *skypeFakeServer {
+	b := New(Config{})
+	return &skypeFakeServer{
+		b,
+		b.WebHookHandler(),
+	}
+}
+
+func (s *skypeFakeServer) SendWebHook(jsonBody []byte) *httptest.ResponseRecorder {
+	rr := httptest.NewRecorder()
+
+	req, err := http.NewRequest("POST", "/", bytes.NewBuffer(jsonBody))
+	if err != nil {
+		panic(err.Error())
+		//t.Fatal(err)
+	}
+
+	s.handler.ServeHTTP(rr, req)
+
+	return rr
+}
+
 func loadTestFile(t *testing.T, name string) []byte {
 	f, err := os.Open(path.Join("./testdata", name))
 	if err != nil {
@@ -34,92 +61,94 @@ func loadTestFile(t *testing.T, name string) []byte {
 	return data
 }
 
-func emulateHookRequest(t *testing.T, handler http.HandlerFunc, json []byte) *httptest.ResponseRecorder {
-	rr := httptest.NewRecorder()
-
-	req, err := http.NewRequest("POST", "/", bytes.NewBuffer(json))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	handler.ServeHTTP(rr, req)
-
-	return rr
-}
-
 func TestBot_WebHookHandler(t *testing.T) {
 	privateMessageActivity := loadTestFile(t, "private_message_activity.json")
 	groupMessageActivity := loadTestFile(t, "group_message_activity.json")
 	attachmentActivity := loadTestFile(t, "attachment_message_activity.json")
+	cmdMessageActivity := loadTestFile(t, "cmd_message_activity.json")
+
+	customCmdMessageActivity := func(cmd string) []byte {
+		return bytes.ReplaceAll(cmdMessageActivity, []byte("TEXT_TEMPLATE"), []byte(cmd))
+	}
 
 	t.Run("nil body", func(t *testing.T) {
-		b := New(Config{})
-
-		rr := emulateHookRequest(t, b.WebHookHandler(), nil)
+		rr := newBotWrapper().SendWebHook(nil)
 
 		require.EqualValues(t, http.StatusBadRequest, rr.Code)
 		require.EqualValues(t, `bad activity: EOF`, rr.Body.String())
 	})
 
 	t.Run("empty json without massage handler", func(t *testing.T) {
-		b := New(Config{})
-
-		rr := emulateHookRequest(t, b.WebHookHandler(), []byte(`{}`))
+		rr := newBotWrapper().SendWebHook([]byte(`{}`))
 
 		require.EqualValues(t, http.StatusNoContent, rr.Code)
 	})
 
 	t.Run("valid activity without massage handler", func(t *testing.T) {
-		b := New(Config{})
-
-		rr := emulateHookRequest(t, b.WebHookHandler(), privateMessageActivity)
+		rr := newBotWrapper().SendWebHook(privateMessageActivity)
 
 		require.EqualValues(t, http.StatusNoContent, rr.Code)
 	})
 
 	t.Run("valid activity with massage handler (private message)", func(t *testing.T) {
-		b := New(Config{})
+		b := newBotWrapper()
 
 		b.Handle(OnTextMessage, func(activity *Activity) {
-			assert.True(t, activity.SomeoneWroteToMe())
 			assert.False(t, activity.IsGroup())
 			assert.Equal(t, "Alexandr Shtovba", activity.Sender().account.Name)
 			assert.Equal(t, "test", activity.Text())
 		})
 
-		rr := emulateHookRequest(t, b.WebHookHandler(), privateMessageActivity)
+		rr := b.SendWebHook(privateMessageActivity)
 
 		require.EqualValues(t, http.StatusNoContent, rr.Code)
 	})
 
 	t.Run("valid activity with massage handler (group message)", func(t *testing.T) {
-		b := New(Config{})
+		b := newBotWrapper()
 		b.Handle(OnTextMessage, func(activity *Activity) {
-			assert.True(t, activity.SomeoneWroteToMe())
 			assert.True(t, activity.IsGroup())
 			assert.Equal(t, "Alexandr Shtovba", activity.Sender().account.Name)
 			assert.Equal(t, "help", activity.Text())
 		})
 
-		rr := emulateHookRequest(t, b.WebHookHandler(), groupMessageActivity)
+		rr := b.SendWebHook(groupMessageActivity)
 
 		require.EqualValues(t, http.StatusNoContent, rr.Code)
 	})
 
 	t.Run("attachment activity", func(t *testing.T) {
-		emulateWebHook(t, attachmentActivity, func(b *Bot) {
-			b.Handle(OnAttachment, func(activity *Activity) {
-				assert.True(t, false)
-			})
+		b := newBotWrapper()
+		b.Handle(OnAttachment, func(activity *Activity) {
+			assert.True(t, true)
 		})
+		b.SendWebHook(attachmentActivity)
 	})
-}
 
-func emulateWebHook(t *testing.T, data []byte, f func(b *Bot)) {
-	b := New(Config{})
-	f(b)
-	rr := emulateHookRequest(t, b.WebHookHandler(), data)
-	require.EqualValues(t, http.StatusNoContent, rr.Code)
+	t.Run("command activity 1", func(t *testing.T) {
+		b := newBotWrapper()
+		cmd := NewCommand("test", []string{"value"})
+		b.Handle(cmd, func(activity *Activity) {
+			cmd.Parse(activity.Text())
+			assert.Equal(t, "command:test", cmd.ID())
+			assert.Equal(t, "test", cmd.Name())
+			assert.Equal(t, map[string]interface{}{"value": 999}, cmd.Args())
+		})
+
+		b.SendWebHook(customCmdMessageActivity("test 999"))
+	})
+
+	t.Run("command activity 2", func(t *testing.T) {
+		b := newBotWrapper()
+		cmd := NewCommand("send_message", []string{"text"})
+		b.Handle(cmd, func(activity *Activity) {
+			cmd.Parse(activity.Text())
+			assert.Equal(t, "command:send_message", cmd.ID())
+			assert.Equal(t, "send_message", cmd.Name())
+			assert.Equal(t, map[string]interface{}{"text": "sometext"}, cmd.Args())
+		})
+		b.SendWebHook(customCmdMessageActivity("send_message sometext"))
+	})
 }
 
 func TestBot_Send(t *testing.T) {
@@ -201,17 +230,4 @@ func TestBot_SendActions(t *testing.T) {
 		err := b.SendActions(groupConversation, "test2", actions)
 		require.NoError(t, err)
 	})
-
-	//t.Run("get all conversations", func(t *testing.T) {
-	//	list, err := b.MyConversations()
-	//
-	//	require.NoError(t, err)
-	//	require.NotEmpty(t, list)
-	//
-	//	for _, conversation := range list.Conversations {
-	//		for _, member := range conversation.Members {
-	//			println(member.ID, member.Name)
-	//		}
-	//	}
-	//})
 }
